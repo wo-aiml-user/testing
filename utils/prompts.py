@@ -57,7 +57,7 @@ A high-level summary has already been approved by the user. Your job is to elabo
 ## Instructions:
 1.  Use the approved summary as your starting point and guiding star.
 2.  Expand on the summary with relevant details from the main context.
-3.  Keep the final overview to a single, easy-to-read paragraph.
+3.  Keep the final overview to a only one single, easy-to-read paragraph.
 4.  Adjust the overview if feedback is present.
 5.  End with natural, relevant follow-up questions.
 
@@ -108,9 +108,8 @@ Follow-up Question
 -   Ask a natural, context-aware question to check if the user is happy with the suggestions or wants to refine them before moving to tech stack planning.
 
 ## Output Style:
--   Plain text only
--   Use bullet points for feature lists
--   Use clear section headings
+-   Output should be clean, plain text only.do not use markdown or any special formating.
+-   Use bullet points for feature lists with a clear section headings.
 -   End with a natural question, not a template phrase
 """
 )
@@ -175,7 +174,7 @@ Testing & DevOps Tools
 -   It should probe for hidden constraints before the final step.
 
 ## Instructions:
--   The output must be a simple, scannable list using the exact headings provided in the format section.
+-   Output should be clean, plain text only.do not use markdown or any special formating.
 -   End with a single, conversational follow-up question based on the style guide above.
 """
 )
@@ -266,9 +265,8 @@ Effort Estimation Hours:
 -   Include a Total row.
 
 ## Output Requirements:
--   Plain text only.
+-   Output should be clean, plain text only.do not use markdown or any special formating.
 -   Use section titles, bullet points, and tables as described.
--   Do not use markdown.
 -   Maintain professional, client-ready language.
 """
 )
