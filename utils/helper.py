@@ -9,57 +9,61 @@ import time
 from functools import wraps
 import logging
 import io
-import assemblyai as aai
-from dotenv import load_dotenv
+from faster_whisper import WhisperModel
 import tempfile
 import os
 
-load_dotenv()
-aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 
 logger = logging.getLogger(__name__)
 
+MODEL_SIZE = "base"
+DEVICE = "cpu"
+COMPUTE_TYPE = "int8"
+
+try:
+    whisper_model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
+    logger.info("Whisper model loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load Faster Whisper model: {e}")
+    whisper_model = None
+
 def transcribe_audio_to_text(audio_bytes: bytes) -> str:
-    logger.info("ENTERING: transcribe_audio_to_text")
+    logger.info("ENTERING: transcribe_audio_to_text (using Faster Whisper)")
+    
+    if whisper_model is None:
+        logger.error("Transcription failed.")
+        raise Exception("Whisper model not available.")
+
     try:
         if len(audio_bytes) < 1000:
-            logger.warning("Audio file is too small, likely empty or invalid")
+            logger.warning("Audio file is too small, likely empty or invalid.")
             return ""
-
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
             temp_file.write(audio_bytes)
             temp_file_path = temp_file.name
 
-        config = aai.TranscriptionConfig(
-            speaker_labels=False,
-            language_code="en",
-            audio_start_from=0,
-            audio_end_at=None,
-            boost_param="high"
-        )
-        transcriber = aai.Transcriber()
+        logger.debug(f"Transcribing audio from temporary file: {temp_file_path}")
 
-        logger.debug(f"Transcribing audio file: {temp_file_path}, size: {len(audio_bytes)} bytes")
-        transcript = transcriber.transcribe(temp_file_path, config=config)
+        segments, info = whisper_model.transcribe(temp_file_path, beam_size=5)
 
-        if transcript.status == aai.TranscriptStatus.error:
-            logger.error(f"Transcription failed: {transcript.error}")
-            raise Exception(f"Transcription failed: {transcript.error}")
-
-        transcribed_text = transcript.text or ""
+        logger.info(f"Detected language '{info.language}' with probability {info.language_probability:.2f}")
+        transcribed_text = "".join(segment.text for segment in segments).strip()
+        
         logger.debug(f"Transcribed text: {transcribed_text}")
-
         os.unlink(temp_file_path)
-        logger.info("Temporary audio file deleted")
+        logger.info("Temporary audio file deleted.")
 
         if not transcribed_text:
-            logger.warning("No speech detected in the audio")
+            logger.warning("No speech detected in the audio.")
             return ""
 
-        logger.info("Transcription successful")
+        logger.info("Transcription successful.")
         return transcribed_text
+
     except Exception as e:
-        logger.error(f"Error in transcribe_audio_to_text: {str(e)}")
+        logger.error(f"Error in transcribe_audio_to_text: {str(e)}", exc_info=True)
+        if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
         raise
 
 sessions: Dict[str, Dict[str, Any]] = {}
