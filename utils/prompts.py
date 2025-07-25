@@ -25,8 +25,17 @@ You are an Document Essence Analyst. Your first task is to read a document and p
 -   Output should be clean, plain text.
 -   Do not use bullet points or special formatting.
 -   Return a concise peragraph of summary followed by your questions.
+
+## JSON SCHEMA ##
+{{{{ 
+  "summary": "Concise one-paragraph explanation of the document's core purpose.",
+  "follow_up_question": "A few natural questions to confirm your understanding and ask for permission to proceed."
+}}}}
+
+
 """
 )
+
 
 overview_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary"], 
@@ -65,6 +74,13 @@ A high-level summary has already been approved by the user. Your job is to elabo
 -   Output should be clean, plain text only.
 -   Do not use bullet points or any special formatting.
 -   Return a single paragraph followed by your own formulated questions.
+
+## JSON SCHEMA ##
+{{{{ 
+  "overview": "Expanded one-paragraph description of the project based on approved summary and context.",
+  "follow_up_question": "Natural questions for clarification or next steps."
+}}}}
+
 """
 )
 
@@ -98,22 +114,25 @@ You are a Senior Product Strategist and Feature Consultant. Your role is to revi
 3.  **Identify Gaps:** What functional gaps exist between the goal and the current information? Where can I add value?
 4.  **Formulate Features:** Based on the above, what are the most critical features to suggest?
 
-## Output Format:
-
 Suggested Features
 -   Provide a concise, on-point list of features.
 -   Each feature should be a bullet point with a brief explanation of its functionality.
-
-Follow-up Question
 -   Ask a natural, context-aware question to check if the user is happy with the suggestions or wants to refine them before moving to tech stack planning.
 
-## Output Style:
--   Output should be clean, plain text only.do not use markdown or any special formating.
+## Output Requirements:
+-   Output should be clean, plain text only. do not use markdown or any special formating.
 -   Use bullet points for feature lists with a clear section headings.
 -   End with a natural question, not a template phrase
+
+## JSON SCHEMA ##
+{{{{ 
+  "features": "List of proposed features in bullet point format.",
+  "follow_up_question": "A question to confirm or refine the features before continuing."
+}}}}
+
+
 """
 )
-
 
 tech_stack_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary", "approved_features"],
@@ -149,33 +168,47 @@ You are a Senior Technical Architect. Your task is to review the project's needs
 3.  **Formulate Recommendations:** Construct a coherent and direct list of technologies organized under the required headings.
 
 ## Technology Stack Suggestion Format:
-Provide a direct, to-the-point list of technologies under the following headings. Do not add any extra commentary or descriptions.
+Use `-` bullets under each heading. Do **not** use numbered or nested lists. No inline explanations.
 
 Frontend Technologies
--   [List web/mobile frameworks and libraries here]
+- [React, Next.js, etc.]
 
 Backend Technologies
--   [List language, framework, and API style here]
+- [Python, FastAPI, REST, etc.]
 
 Database Solutions
--   [List SQL, NoSQL, or hybrid recommendations and specific technologies here]
+- [Supabase, PostgreSQL, Redis, etc.]
 
 AI/ML Tools and Frameworks (if applicable)
--   [List relevant platforms, libraries, and models here]
+- [VisionKit SDK, TensorFlow, OpenCV, etc.]
 
 Deployment/Cloud Services
--   [List hosting provider, serverless options, and infrastructure advice here]
+- [AWS Lambda, CloudFront, Docker, etc.]
 
 Testing & DevOps Tools
--   [List testing frameworks, CI/CD pipelines, monitoring, and logging solutions here]
+- [Jest, Playwright, Bitbucket Pipelines, etc.]
 
 ## Follow-up Question Style:
--   Your question should connect the tech choices to the final project plan (the work scope).
--   It should probe for hidden constraints before the final step.
+- Ask **one natural-language question** that connects the tech choices to the implementation or integration plan.
+- Prefer clarification or confirmation-style prompts.
 
-## Instructions:
--   Output should be clean, plain text only.do not use markdown or any special formating.
--   End with a single, conversational follow-up question based on the style guide above.
+## Output Requirements:
+- Output must be a valid JSON object.
+- Use bullet-point format inside all JSON fields.
+- Do **not** return markdown (no ```json blocks, no formatting).
+
+## JSON SCHEMA ##
+{{{{ 
+  "tech_stack": {{
+    "frontend": "Bullet list of frontend frameworks/libraries.",
+    "backend": "Bullet list of backend languages, frameworks, and API style.",
+    "database": "Bullet list of recommended database technologies.",
+    "ai_ml": "Bullet list of relevant ML/AI tools if applicable.",
+    "deployment": "Bullet list of hosting/cloud tools and deployment options.",
+    "testing_devops": "Bullet list of testing, CI/CD, and DevOps tools."
+  }},
+  "follow_up_question": "A question connecting stack suggestions to overall scope."
+}}}}
 """
 )
 
@@ -268,8 +301,38 @@ Effort Estimation Hours:
 -   Output should be clean, plain text only.do not use markdown or any special formating.
 -   Use section titles, bullet points, and tables as described.
 -   Maintain professional, client-ready language.
+
+## JSON SCHEMA ##
+{{{{ 
+  "overview": "Summary of the project's purpose, goals, and key considerations.",
+  "user_roles_and_key_features": "List of user roles and their core responsibilities.",
+  "feature_breakdown": "Grouped feature list with descriptions.",
+  "workflow": "Step-by-step interaction flow.",
+  "milestone_plan": "List of milestones with duration and deliverables.",
+  "tech_stack": "Categorized list of approved technologies.",
+  "deliverables": "Project deliverables.",
+  "out_of_scope": "Excluded work and responsibilities.",
+  "client_responsibilities": "Items or actions required from the client.",
+  "technical_requirements": "Non-functional and compliance requirements.",
+  "general_notes": "Notes on QA, support, payment, and communication.",
+  "effort_estimation_table": {{
+    "headers": ["Module", "Min Hours", "Max Hours"],
+    "rows": [
+      ["Frontend", "5", "6"],
+      ["Backend", "6", "8"],
+      ["Database", "2", "3"],
+      ["AI/ML", "3", "4"],
+      ["DevOps", "2", "2.5"],
+      ["Project Management", "2", "3"],
+      ["Total", "20", "26.5"]
+    ]
+  }},
+  "follow_up_question": "One natural-language question to validate or clarify scope or assumptions."
+}}}}
+
 """
 )
+
 
 router_prompt = PromptTemplate(
     input_variables=["user_input", "current_stage", "current_content"],

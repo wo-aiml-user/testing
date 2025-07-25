@@ -1,8 +1,7 @@
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.pdf import PDFPlumberParser
 from langchain_core.documents import Document
-from typing import List
-from typing import Dict, Any
+from typing import List, Dict, Any
 from threading import Lock
 import uuid
 import time
@@ -12,7 +11,6 @@ import io
 from faster_whisper import WhisperModel
 import tempfile
 import os
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +25,7 @@ except Exception as e:
     logger.error(f"Failed to load Faster Whisper model: {e}")
     whisper_model = None
 
+
 def transcribe_audio_to_text(audio_bytes: bytes) -> str:
     logger.info("ENTERING: transcribe_audio_to_text (using Faster Whisper)")
     
@@ -38,6 +37,7 @@ def transcribe_audio_to_text(audio_bytes: bytes) -> str:
         if len(audio_bytes) < 1000:
             logger.warning("Audio file is too small, likely empty or invalid.")
             return ""
+
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
             temp_file.write(audio_bytes)
             temp_file_path = temp_file.name
@@ -66,8 +66,10 @@ def transcribe_audio_to_text(audio_bytes: bytes) -> str:
             os.unlink(temp_file_path)
         raise
 
+
 sessions: Dict[str, Dict[str, Any]] = {}
 session_lock = Lock()
+
 
 def time_logger(func):
     """A decorator that logs the execution time of a synchronous function."""
@@ -85,6 +87,7 @@ def time_logger(func):
         return result
     return wrapper
 
+
 def async_time_logger(func):
     """A decorator that logs the execution time of an asynchronous function."""
     @wraps(func)
@@ -101,11 +104,13 @@ def async_time_logger(func):
         return result
     return wrapper
 
+
 def parse_pdf(file_bytes: bytes, filename: str) -> str:
     blob = Blob.from_data(file_bytes, path=filename)
     parser = PDFPlumberParser(extract_images=True)
     documents: List[Document] = parser.parse(blob)
     return "\n\n".join(doc.page_content for doc in documents)
+
 
 def get_session(session_id: str) -> Dict[str, Any]:
     """Get or create a session"""
@@ -115,10 +120,10 @@ def get_session(session_id: str) -> Dict[str, Any]:
                 "thread_id": str(uuid.uuid4()),
                 "workflow_active": False,
                 "workflow_completed": False,
-                "chat_history": [],
                 "current_state": None
             }
         return sessions[session_id]
+
 
 def update_session(session_id: str, updates: Dict[str, Any]):
     """Update session data"""
@@ -126,8 +131,9 @@ def update_session(session_id: str, updates: Dict[str, Any]):
         if session_id in sessions:
             sessions[session_id].update(updates)
 
+
 def get_stage_content(state_values: Dict[str, Any], current_stage: str) -> str:
-    """Extract content based on current stage"""
+    """Extract content based on current stage, including follow-up questions"""
     stage_content_map = {
         "initial_summary": "initial_summary",
         "overview": "overview",
@@ -137,10 +143,11 @@ def get_stage_content(state_values: Dict[str, Any], current_stage: str) -> str:
     }
     
     content_key = stage_content_map.get(current_stage, "initial_summary")
-    return state_values.get(content_key, f"Error: No content generated for stage {current_stage}")
-
-def get_stage_message(current_stage: str, content: str, workflow_completed: bool = False) -> str:
-    """Generate appropriate message for current stage"""
-    if workflow_completed:
-        return content
-    return content
+    main_content = state_values.get(content_key, f"Error: No content generated for stage {current_stage}")
+    follow_up = state_values.get("follow_up_questions", "")
+    logger.info(f"Retrieved follow-up questions for {current_stage}: '{follow_up}'")
+    
+    if follow_up and follow_up.strip():
+        return f"{main_content}\n\n{follow_up}"
+    
+    return main_content
