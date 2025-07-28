@@ -1,6 +1,7 @@
 import logging
 import json
 from langchain.prompts import ChatPromptTemplate
+from langgraph.graph import END
 from utils.prompts import (
     summary_prompt,
     overview_prompt,
@@ -23,7 +24,7 @@ def load_initial_state_node(state):
 
 @time_logger
 def generate_initial_summary_node(state):
-    user_feedback = state.user_feedback or ""
+    user_feedback = getattr(state, 'user_feedback', "")
     try:
         prompt = ChatPromptTemplate.from_template(summary_prompt.template)
         chain = prompt | state.LLM
@@ -41,7 +42,7 @@ def generate_initial_summary_node(state):
             follow_up = result.get("follow_up_question", "") 
             logger.info(f"Follow-up question for initial summary: {follow_up}")
             return {
-                "initial_summary": result["summary"],
+                "initial_summary": result.get("summary", "Error: No summary found in response."),
                 "follow_up_questions": str(follow_up).strip(),  
                 "current_stage": "initial_summary",
                 "user_feedback": ""
@@ -65,8 +66,8 @@ def generate_initial_summary_node(state):
 
 @time_logger
 def router_node(state):
-    user_input = state.user_input.strip()
-    current_stage = state.current_stage
+    user_input = getattr(state, 'user_input', "").strip()
+    current_stage = getattr(state, 'current_stage', 'initial_summary')
     state_updates = {"user_input": "", "user_feedback": "", "routing_decision": None}
 
     if not user_input:
@@ -119,13 +120,14 @@ def router_node(state):
 
 @time_logger
 def generate_overview_node(state):
+    user_feedback = getattr(state, 'user_feedback', "")
     try:
         prompt = ChatPromptTemplate.from_template(overview_prompt.template)
         chain = prompt | state.LLM
         output = chain.invoke({
             "parsed_data": state.file_content,
             "approved_summary": state.initial_summary,
-            "user_feedback": state.user_feedback
+            "user_feedback": user_feedback
         })
 
         raw = output.content.strip()
@@ -140,7 +142,7 @@ def generate_overview_node(state):
             follow_up = result.get("follow_up_question", "")  
             logger.info(f"Follow-up question for overview: {follow_up}")
             return {
-                "overview": result["overview"],
+                "overview": result.get("overview", "Error: No overview found in response."),
                 "follow_up_questions": str(follow_up).strip(),  
                 "current_stage": "overview",
                 "user_feedback": ""
@@ -165,13 +167,14 @@ def generate_overview_node(state):
 
 @time_logger
 def feature_extraction_node(state):
+    user_feedback = getattr(state, 'user_feedback', "")
     try:
         prompt = ChatPromptTemplate.from_template(feature_suggestion_prompt.template)
         chain = prompt | state.LLM
         output = chain.invoke({
             "parsed_data": state.file_content,
             "approved_summary": state.overview,
-            "user_feedback": state.user_feedback
+            "user_feedback": user_feedback
         })
 
         raw = output.content.strip()
@@ -184,7 +187,7 @@ def feature_extraction_node(state):
             result = json.loads(raw)
             logger.info(f"Parsed feature result: {result}")
             
-            features = result.get("features", "")
+            features = result.get("features", [])
             follow_up = result.get("follow_up_question", "")  
             
             logger.info(f"Follow-up questions for features: {follow_up}")
@@ -221,6 +224,7 @@ def feature_extraction_node(state):
 
 @time_logger
 def generate_tech_stack_node(state):
+    user_feedback = getattr(state, 'user_feedback', "")
     try:
         prompt = ChatPromptTemplate.from_template(tech_stack_prompt.template)
         chain = prompt | state.LLM
@@ -229,14 +233,14 @@ def generate_tech_stack_node(state):
             "parsed_data": state.file_content,
             "approved_summary": state.overview,
             "approved_features": state.extracted_features,
-            "user_feedback": state.user_feedback
+            "user_feedback": user_feedback
         })
 
         raw = output.content.strip()
         logger.info(f"Raw LLM output for tech stack: {raw}")
 
         if raw.startswith("```json") or raw.startswith("```"):
-            raw = raw.strip("```json").strip("```").strip()
+            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
 
         try:
             result = json.loads(raw)
@@ -247,13 +251,9 @@ def generate_tech_stack_node(state):
             
             logger.info(f"Follow-up questions for tech stack: {follow_up_questions}")
 
-            for key, value in tech_stack_dict.items():
-                if isinstance(value, list):
-                    tech_stack_dict[key] = "\n".join(value)
-
             return {
                 "tech_stack": json.dumps(tech_stack_dict, indent=2),
-                "follow_up_questions": follow_up_questions,
+                "follow_up_questions": str(follow_up_questions).strip(),
                 "current_stage": "tech_stack",
                 "user_feedback": ""
             }
@@ -279,27 +279,38 @@ def generate_tech_stack_node(state):
 
 @time_logger
 def generate_scope_of_work_node(state):
+    user_feedback = getattr(state, 'user_feedback', "")
     try:
         prompt = ChatPromptTemplate.from_template(work_scope_prompt.template)
         chain = prompt | state.LLM
+        
+        try:
+            tech_stack_for_prompt = json.loads(state.tech_stack)
+        except (json.JSONDecodeError, TypeError):
+            tech_stack_for_prompt = state.tech_stack
+
         output = chain.invoke({
             "parsed_data": state.file_content,
             "approved_summary": state.overview,
             "approved_features": state.extracted_features,
-            "approved_tech_stack": state.tech_stack,
-            "user_feedback": state.user_feedback
+            "approved_tech_stack": tech_stack_for_prompt,
+            "user_feedback": user_feedback
         })
 
         raw = output.content.strip()
+        logger.info(f"Raw LLM output for scope of work: {raw}")
+
         if raw.startswith("```json") or raw.startswith("```"):
-            raw = raw.strip("```json").strip("```").strip()
+            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
 
         try:
             result = json.loads(raw)
-
+            logger.info(f"Parsed scope of work result: {result}")
+            follow_up = result.get("follow_up_question", "")
+            
             return {
                 "scope_of_work": json.dumps(result, indent=2),
-                "follow_up_questions": result.get("follow_up_question", ""),
+                "follow_up_questions": str(follow_up).strip(),
                 "current_stage": "scope_of_work",
                 "user_feedback": ""
             }
@@ -318,11 +329,13 @@ def generate_scope_of_work_node(state):
         return {
             "scope_of_work": f"Error: {str(e)}",
             "follow_up_questions": "",
-            "current_stage": "scope_of_work"
+            "current_stage": "scope_of_work",
+            "user_feedback": ""
         }
 
 @time_logger
 def regenerate_current(state):
+    current_stage = getattr(state, 'current_stage', 'initial_summary')
     stage_map = {
         "initial_summary": generate_initial_summary_node,
         "overview": generate_overview_node,
@@ -330,28 +343,32 @@ def regenerate_current(state):
         "tech_stack": generate_tech_stack_node,
         "scope_of_work": generate_scope_of_work_node
     }
-    handler = stage_map.get(state.current_stage)
+    handler = stage_map.get(current_stage)
     return handler(state) if handler else state
 
 
 @time_logger
 def pause_node(state):
-    logger.info(f"Paused at stage {state.current_stage}")
+    current_stage = getattr(state, 'current_stage', 'initial_summary')
+    logger.info(f"Paused at stage {current_stage}")
     return state
 
 
 @time_logger
 def should_continue_from_router(state):
-    decision = state.routing_decision
-    stage = state.current_stage
+    decision = getattr(state, 'routing_decision', None)
+    stage = getattr(state, 'current_stage', 'initial_summary')
+    
     if decision == "APPROVE":
-        return {
+        stage_transitions = {
             "initial_summary": "generate_overview",
             "overview": "feature_extraction",
             "features": "generate_tech_stack",
             "tech_stack": "generate_scope_of_work",
-            "scope_of_work": "END"
-        }.get(stage, "pause_node")
+            "scope_of_work": END
+        }
+        return stage_transitions.get(stage, "pause_node")
     elif decision == "EDIT":
         return "regenerate_current"
+    
     return "pause_node"

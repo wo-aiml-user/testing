@@ -22,17 +22,14 @@ You are an Document Essence Analyst. Your first task is to read a document and p
 -   Formulate natural follow-up questions to confirm your interpretation and ask for permission to proceed.
 
 ## Output Requirements:
--   Output should be clean, plain text.
--   Do not use bullet points or special formatting.
--   Return a concise peragraph of summary followed by your questions.
+- Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
+- Do not include any introductory text, explanations, or markdown formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
   "summary": "Concise one-paragraph explanation of the document's core purpose.",
   "follow_up_question": "A few natural questions to confirm your understanding and ask for permission to proceed."
 }}}}
-
-
 """
 )
 
@@ -71,16 +68,14 @@ A high-level summary has already been approved by the user. Your job is to elabo
 5.  End with natural, relevant follow-up questions.
 
 ## Output Requirements:
--   Output should be clean, plain text only.
--   Do not use bullet points or any special formatting.
--   Return a single paragraph followed by your own formulated questions.
+- Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
+- Do not include any introductory text, explanations, or markdown formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
   "overview": "Expanded one-paragraph description of the project based on approved summary and context.",
   "follow_up_question": "Natural questions for clarification or next steps."
 }}}}
-
 """
 )
 
@@ -120,17 +115,18 @@ Suggested Features
 -   Ask a natural, context-aware question to check if the user is happy with the suggestions or wants to refine them before moving to tech stack planning.
 
 ## Output Requirements:
--   Output should be clean, plain text only. do not use markdown or any special formating.
--   Use bullet points for feature lists with a clear section headings.
--   End with a natural question, not a template phrase
+- Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
+- Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
 
 ## JSON SCHEMA ##
 {{{{ 
-  "features": "List of proposed features in bullet point format.",
+  "features": [
+    "A concise, one-sentence description of the first suggested feature.",
+    "A concise, one-sentence description of the second suggested feature.",
+    "And so on for all other features..."
+  ],
   "follow_up_question": "A question to confirm or refine the features before continuing."
 }}}}
-
-
 """
 )
 
@@ -188,24 +184,19 @@ Deployment/Cloud Services
 Testing & DevOps Tools
 - [Jest, Playwright, Bitbucket Pipelines, etc.]
 
-## Follow-up Question Style:
-- Ask **one natural-language question** that connects the tech choices to the implementation or integration plan.
-- Prefer clarification or confirmation-style prompts.
-
 ## Output Requirements:
-- Output must be a valid JSON object.
-- Use bullet-point format inside all JSON fields.
-- Do **not** return markdown (no ```json blocks, no formatting).
+- Your entire output MUST be a single, valid JSON object that strictly adheres to the schema below.
+- Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
 
 ## JSON SCHEMA ##
 {{{{ 
   "tech_stack": {{
-    "frontend": "Bullet list of frontend frameworks/libraries.",
-    "backend": "Bullet list of backend languages, frameworks, and API style.",
-    "database": "Bullet list of recommended database technologies.",
-    "ai_ml": "Bullet list of relevant ML/AI tools if applicable.",
-    "deployment": "Bullet list of hosting/cloud tools and deployment options.",
-    "testing_devops": "Bullet list of testing, CI/CD, and DevOps tools."
+    "frontend": ["React", "Next.js", "Tailwind CSS"],
+    "backend": ["Python", "FastAPI", "RESTful APIs"],
+    "database": ["PostgreSQL", "Redis", "Pinecone"],
+    "ai_ml": ["OpenAI API", "LangChain", "PyTorch"],
+    "deployment": ["AWS Lambda", "Docker", "CloudFront"],
+    "testing_devops": ["Jest", "Playwright", "GitHub Actions"]
   }},
   "follow_up_question": "A question connecting stack suggestions to overall scope."
 }}}}
@@ -298,38 +289,43 @@ Effort Estimation Hours:
 -   Include a Total row.
 
 ## Output Requirements:
--   Output should be clean, plain text only.do not use markdown or any special formating.
--   Use section titles, bullet points, and tables as described.
--   Maintain professional, client-ready language.
+- Your entire response MUST be a single, valid JSON object that strictly adheres to the schema below.
+- Do not include any introductory text, explanations, closing remarks, or markdown formatting like ```json before or after the JSON object.
 
 ## JSON SCHEMA ##
 {{{{ 
   "overview": "Summary of the project's purpose, goals, and key considerations.",
-  "user_roles_and_key_features": "List of user roles and their core responsibilities.",
-  "feature_breakdown": "Grouped feature list with descriptions.",
-  "workflow": "Step-by-step interaction flow.",
-  "milestone_plan": "List of milestones with duration and deliverables.",
-  "tech_stack": "Categorized list of approved technologies.",
-  "deliverables": "Project deliverables.",
-  "out_of_scope": "Excluded work and responsibilities.",
-  "client_responsibilities": "Items or actions required from the client.",
-  "technical_requirements": "Non-functional and compliance requirements.",
-  "general_notes": "Notes on QA, support, payment, and communication.",
+  "user_roles_and_key_features": "List of user roles and their core responsibilities, formatted as a string with \\n for newlines.",
+  "feature_breakdown": "Grouped feature list with descriptions, formatted as a string with \\n for newlines.",
+  "workflow": "Step-by-step interaction flow, formatted as a string with \\n for newlines.",
+  "milestone_plan": "List of milestones with duration and deliverables, formatted as a string with \\n for newlines.",
+  "tech_stack": {{
+    "frontend": ["React", "Next.js"],
+    "backend": ["Python", "FastAPI"],
+    "database": ["PostgreSQL", "Redis"],
+    "ai_ml": ["OpenAI API", "LangChain"],
+    "deployment": ["AWS", "Docker"],
+    "testing_devops": ["Pytest", "Jest"]
+  }},
+  "deliverables": "Project deliverables, formatted as a string with \\n for newlines.",
+  "out_of_scope": "Excluded work and responsibilities, formatted as a string with \\n for newlines.",
+  "client_responsibilities": "Items or actions required from the client, formatted as a string with \\n for newlines.",
+  "technical_requirements": "Non-functional and compliance requirements, formatted as a string with \\n for newlines.",
+  "general_notes": "Notes on QA, support, payment, and communication, formatted as a string with \\n for newlines.",
   "effort_estimation_table": {{
     "headers": ["Module", "Min Hours", "Max Hours"],
     "rows": [
-      ["Frontend", "5", "6"],
-      ["Backend", "6", "8"],
-      ["Database", "2", "3"],
-      ["AI/ML", "3", "4"],
-      ["DevOps", "2", "2.5"],
-      ["Project Management", "2", "3"],
-      ["Total", "20", "26.5"]
+      ["Frontend", "40", "60"],
+      ["Backend", "50", "70"],
+      ["Database", "20", "30"],
+      ["AI/ML", "60", "80"],
+      ["DevOps", "25", "35"],
+      ["Project Management", "30", "40"],
+      ["Total", "225", "315"]
     ]
   }},
   "follow_up_question": "One natural-language question to validate or clarify scope or assumptions."
 }}}}
-
 """
 )
 
