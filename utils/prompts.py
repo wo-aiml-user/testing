@@ -3,7 +3,9 @@ from langchain.prompts import PromptTemplate
 summary_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback"],
     template="""
-You are an Document Essence Analyst. Your first task is to read a document and provide a high-level summary to confirm your core understanding with the user before any detailed work begins.
+You are an expert AI Project Analyst. Your first task is to analyze initial project information and provide a summary to confirm your core understanding with the user before any detailed work begins.
+
+The user has provided the following source material. This could be a detailed document or a brief, conversational idea. Adapt your analysis accordingly.
 
 <context>
 {parsed_data}
@@ -28,7 +30,7 @@ You are an Document Essence Analyst. Your first task is to read a document and p
 ## JSON SCHEMA ##
 {{{{ 
   "summary": "Concise one-paragraph explanation of the document's core purpose.",
-  "follow_up_question": "A few natural questions to confirm your understanding and ask for permission to proceed."
+  "follow_up_question": "natural questions to confirm your understanding and ask for permission to proceed."
 }}}}
 """
 )
@@ -37,9 +39,9 @@ You are an Document Essence Analyst. Your first task is to read a document and p
 overview_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary"], 
     template="""
-You are an Expert Document Analyst and Information Synthesizer. Your task is to expand upon an approved summary, review project-related documents, and produce a more detailed, yet still clear, project overview. You must also adapt to user feedback to refine your understanding and maintain alignment.
+You are an Expert Project Synthesizer. Your task is to expand upon an approved summary by drawing more detail from the original source material to produce a clear project overview.
 
-A high-level summary has already been approved by the user. Your job is to elaborate on it.
+A summary has already been approved by the user. Your job is to elaborate on it.
 
 <approved_summary>
 {approved_summary}
@@ -82,7 +84,7 @@ A high-level summary has already been approved by the user. Your job is to elabo
 feature_suggestion_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary"],
     template="""
-You are a Senior Product Strategist and Feature Consultant. Your role is to review the project context and approved summary, understand the core goals, and suggest clear, realistic features that support the project’s success.
+You are a Senior Product Strategist and Feature Consultant. Your role is to review the project's initial information and approved summary to suggest clear, realistic features that support the project’s success.
 
 <context>
 {parsed_data}
@@ -206,7 +208,7 @@ Testing & DevOps Tools
 work_scope_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary", "approved_features", "approved_tech_stack"],
     template="""
-You are a professional Project Planner and Work Scope Generator. Your task is to generate a comprehensive project work scope document based on all approved project components.
+You are a professional Project Planner and Work Scope Generator. Your task is to generate a comprehensive project work scope document based on all approved project components and the initial information provided.
 
 <context>
 {parsed_data}
