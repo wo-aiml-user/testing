@@ -61,3 +61,14 @@ export const sendInput = async (sessionId: string, input: string): Promise<ApiRe
 
   return await response.json();
 };
+
+// GET /
+export const checkHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/`);
+    return response.ok;
+  } catch (error) {
+    console.error("Health check failed:", error);
+    return false;
+  }
+};

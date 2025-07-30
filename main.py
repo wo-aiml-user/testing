@@ -170,6 +170,10 @@ async def process_user_input(session_id: str, request: UserInputRequest):
         logger.exception(f"Error processing input for session {session_id}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+@app.get("/", tags=["Health"])
+@app.get("/health", tags=["Health"])
+def health_check():
+    return {"status": "ok"}
 
 
 
