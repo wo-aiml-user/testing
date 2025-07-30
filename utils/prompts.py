@@ -30,6 +30,7 @@ The user has provided the following source material. This could be a detailed do
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{
@@ -74,6 +75,7 @@ A summary has already been approved by the user. Your job is to elaborate on it.
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -121,6 +123,7 @@ Suggested Features
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -191,6 +194,7 @@ Testing & DevOps Tools
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema below.
 - Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -295,6 +299,7 @@ Effort Estimation Hours:
 ## Output Requirements:
 - Your entire response MUST be a single, valid JSON object that strictly adheres to the schema below.
 - Do not include any introductory text, explanations, closing remarks, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
