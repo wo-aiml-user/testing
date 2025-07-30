@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from src.graph import graph, END
 from utils.logger import setup_logging
 from utils.helper import (
-    parse_pdf,
+    parse_file,
     get_session,
     update_session,
     get_stage_content,
@@ -68,7 +68,7 @@ async def upload_file(session_id: str, file: UploadFile = File(...)):
 
     try:
         file_bytes = await file.read()
-        file_content = parse_pdf(file_bytes, file.filename)
+        file_content = parse_file(file_bytes, file.filename)
 
         initial_state = {"file_content": file_content, "LLM": LLM}
         config = {"configurable": {"thread_id": session["thread_id"]}}

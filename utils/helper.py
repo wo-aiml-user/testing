@@ -2,6 +2,12 @@ from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers.pdf import PDFPlumberParser
 from langchain_core.documents import Document
 from typing import List, Dict, Any
+import os
+import tempfile
+from dotenv import load_dotenv
+from typing import List
+from llama_index.core import Document as LlamaDocument
+from llama_parse import LlamaParse
 from threading import Lock
 import uuid
 import time
@@ -10,6 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+load_dotenv()
 
 
 sessions: Dict[str, Dict[str, Any]] = {}
@@ -50,11 +57,26 @@ def async_time_logger(func):
     return wrapper
 
 
-def parse_pdf(file_bytes: bytes, filename: str) -> str:
-    blob = Blob.from_data(file_bytes, path=filename)
-    parser = PDFPlumberParser(extract_images=True)
-    documents: List[Document] = parser.parse(blob)
-    return "\n\n".join(doc.page_content for doc in documents)
+def parse_file(file_bytes: bytes, filename: str) -> str:
+    api_key = os.getenv("PARSE_kEY")
+    if not api_key:
+        raise EnvironmentError("PARSE_kEY not found")
+    
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
+            tmp.write(file_bytes)
+            tmp_path = tmp.name
+        
+        parser = LlamaParse(api_key=api_key, result_type="text")
+        documents: List[LlamaDocument] = parser.load_data([tmp_path])
+        
+        return "\n\n".join(doc.text for doc in documents)
+    
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
 
 
 def get_session(session_id: str) -> Dict[str, Any]:
