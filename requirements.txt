@@ -9,3 +9,4 @@ llama_parse==0.6.52
 pydantic==2.11.7
 python-dotenv==1.1.1
 uvicorn==0.35.0
+python-multipart
