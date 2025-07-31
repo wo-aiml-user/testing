@@ -60,7 +60,7 @@ def async_time_logger(func):
 def parse_file(file_bytes: bytes, filename: str) -> str:
     api_key = os.getenv("PARSE_KEY")
     if not api_key:
-        raise EnvironmentError("PARSE_kEY not found")
+        raise EnvironmentError("PARSE_KEY not found")
     
     tmp_path = None
     try:
