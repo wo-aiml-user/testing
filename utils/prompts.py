@@ -5,7 +5,7 @@ summary_prompt = PromptTemplate(
     template="""
 You are an expert AI Project Analyst. Your first task is to analyze initial project information and provide a summary to confirm your core understanding with the user before any detailed work begins.
 
-The user has provided the following source material. This could be a detailed document or a brief, conversational idea. Adapt your analysis accordingly.
+The user has provided the following source material. This could be a detailed document or a brief, conversational idea like 'hi' or 'hello'. Adapt your analysis accordingly.
 
 <context>
 {parsed_data}
@@ -15,27 +15,35 @@ The user has provided the following source material. This could be a detailed do
 {user_feedback}
 </user_feedback>
 
-## Core Responsibilities:
+## Triage Protocol (Analyze this first!)
+1.  **Greeting Check:** If the context is a simple greeting (e.g., 'Hi', 'Hello', 'hey', 'hii') or is clearly not a project description, DO NOT analyze it as a project.your JSON output must provide a friendly, welcoming response.
+2.  **Ambiguity Check:** If the context seems like a project idea but is too vague or insufficient to create a meaningful summary, in the 'summary' field of your JSON output, you should state that more information is needed and ask for clarification.
+3.  **Project Analysis:** If the context is clearly a project description, proceed with the Core Responsibilities below.
+
+## Core Responsibilities (Only if the input is a project description):
 -   Analyze the provided context to grasp the document's central theme and primary objective.
 -   Synthesize this understanding into a very brief and executive summary.
 -   If feedback is present, integrate it to improve the summary.
 -   Focus only on the absolute core purpose of the document.
--   **Uncertainty Protocol:** If the context is too ambiguous or insufficient to form a coherent summary, explicitly state that you need more clarification on the document's main purpose before you can proceed.
 -   Formulate natural follow-up questions to confirm your interpretation and ask for permission to proceed.
+
+## Modification Instructions (When user_feedback is present):
+- Your ONLY task is to apply the user's feedback to the previous version of the content.
+- Read the <user_feedback> to understand the specific change requested.
+- DO NOT alter, add, or remove any other information that was not explicitly mentioned in the feedback. Use the existing content as your starting point and only modify the part the user has asked to change.
 
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
-{{{{ 
-  "summary": "Concise one-paragraph explanation of the document's core purpose.",
-  "follow_up_question": "natural questions to confirm your understanding and ask for permission to proceed."
+{{{{
+  "summary": "If a greeting, a welcome message. If ambiguous, a request for clarity. If a project, a concise one-paragraph explanation of its core purpose.",
+  "follow_up_question": "If a greeting, ask the user to describe their project. If ambiguous, ask clarifying questions. If a project, ask for confirmation to proceed."
 }}}}
 """
 )
-
-
 overview_prompt = PromptTemplate(
     input_variables=["parsed_data", "user_feedback", "approved_summary"], 
     template="""
@@ -69,9 +77,15 @@ A summary has already been approved by the user. Your job is to elaborate on it.
 4.  Adjust the overview if feedback is present.
 5.  End with natural, relevant follow-up questions.
 
+## Modification Instructions (When user_feedback is present):
+- Your ONLY task is to apply the user's feedback to the previous version of the content.
+- Read the <user_feedback> to understand the specific change requested.
+- DO NOT alter, add, or remove any other information that was not explicitly mentioned in the feedback. Use the existing content as your starting point and only modify the part the user has asked to change.
+
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -116,9 +130,15 @@ Suggested Features
 -   Each feature should be a bullet point with a brief explanation of its functionality.
 -   Ask a natural, context-aware question to check if the user is happy with the suggestions or wants to refine them before moving to tech stack planning.
 
+## Modification Instructions (When user_feedback is present):
+- Your ONLY task is to apply the user's feedback to the previous version of the feature list.
+- Read the <user_feedback> to understand the specific change requested (e.g., add a feature, remove a feature, rephrase one).
+- DO NOT alter, add, or remove any other features that were not explicitly mentioned in the feedback. Use the existing feature list as your starting point and only modify what the user has asked to change.
+
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
 - Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -186,9 +206,15 @@ Deployment/Cloud Services
 Testing & DevOps Tools
 - [Jest, Playwright, Bitbucket Pipelines, etc.]
 
+## Modification Instructions (When user_feedback is present):
+- Your ONLY task is to apply the user's feedback to the previous version of the tech stack.
+- Read the <user_feedback> to understand the specific change requested (e.g., "change database to MongoDB", "add Vue.js to frontend").
+- DO NOT alter, add, or remove any other technologies or categories that were not explicitly mentioned in the feedback. Use the existing tech stack as your starting point and only modify the part the user has asked to change.
+
 ## Output Requirements:
 - Your entire output MUST be a single, valid JSON object that strictly adheres to the schema below.
 - Do not include any introductory text, explanations, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -290,9 +316,15 @@ Effort Estimation Hours:
 -   Modules should include: Frontend, Backend, Database, AI/ML (if applicable), DevOps, and Project Management.
 -   Include a Total row.
 
+## Modification Instructions (When user_feedback is present):
+- Your ONLY task is to apply the user's feedback to the previous version of the work scope.
+- Read the <user_feedback> to understand the specific change requested (e.g., "update the duration for milestone 1", "add a new client responsibility").
+- DO NOT alter, add, or remove ANY other information, sections, or text that was not explicitly mentioned in the feedback. Use the existing work scope as your starting point and only modify the part the user has asked to change.
+
 ## Output Requirements:
 - Your entire response MUST be a single, valid JSON object that strictly adheres to the schema below.
 - Do not include any introductory text, explanations, closing remarks, or markdown formatting like ```json before or after the JSON object.
+- All string values in the JSON must contain plain text only. Do not use Markdown (e.g., `**bold**`, `*italic*`) or other formatting.
 
 ## JSON SCHEMA ##
 {{{{ 
@@ -333,33 +365,26 @@ Effort Estimation Hours:
 
 
 router_prompt = PromptTemplate(
-    input_variables=["user_input", "current_stage", "current_content"],
+    input_variables=["user_input", "current_stage", "current_content", "last_follow_up_question"],
     template="""
-You are a Router Agent. Analyze the user input and determine the appropriate action.
+You are an intelligent Router Agent responsible for determining the user's intent and deciding the next action in a workflow. You must use a chain of thought to arrive at your decision.
 
-Current Stage: {current_stage}
-Current Content: {current_content}
-User Input: {user_input}
+### Step 1: Context Analysis
+First, internally review the full context: the current stage '{current_stage}', the last question you asked '{last_follow_up_question}', and the user's response '{user_input}'.
 
-You must choose one of the following actions:
+### Step 2: Reasoning and Decision
+Reason through the user's intent to determine the final action and feedback. Analyze the input based on these principles, in order of priority:
+
+1.  **Identify Modification Intent:** First, analyze if the user's input seeks to alter the current content. Does it introduce new information, correct existing details, add or remove items, or state a preference that differs from the generated content? If the input's purpose is to cause any change, the action is `EDIT`. The feedback should be the user's direct, verbatim request.
+
+2.  **Identify Approval Intent:** If the input is not a modification, analyze it for approval. Does the language convey satisfaction, agreement, and an explicit or implicit desire to move forward in the workflow? If the semantic intent is clearly positive and seeks progression, the action is `APPROVE`.
+
+3.  **Identify Information-Providing Intent:** If the input is neither a modification nor an explicit approval, determine if its sole purpose is to provide the specific data requested by the `last_follow_up_question`. If the user is simply answering a direct question, this does not constitute approval of the entire stage. The action is `EDIT`. The feedback must be a direct, synthesized instruction to regenerate the content using this new information.
+
+### Step 3: Final Output
+Based on your reasoning, provide your final decision. Do not include your reasoning in the output. Your entire output must be only the ACTION and FEEDBACK.
+
 ACTION: [APPROVE or EDIT]
-FEEDBACK: [If the action is EDIT, provide the original user's input directly. If the action is APPROVE, leave this empty.]
-
-Examples:
-User Input: "yes, this works"
-ACTION: APPROVE
-FEEDBACK: 
-
-User Input: "reword the introduction"
-ACTION: EDIT
-FEEDBACK: reword the introduction
-
-User Input: "can you make the tone more formal?"
-ACTION: EDIT
-FEEDBACK: can you make the tone more formal?
-
-User Input: "That's great, let's proceed."
-ACTION: APPROVE
-FEEDBACK: 
+FEEDBACK: [If action is APPROVE, leave empty. If action is EDIT, provide the user's direct request or the synthesized instruction you formulated.]
 """
 )
