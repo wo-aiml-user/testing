@@ -69,21 +69,10 @@ def router_node(state):
     user_input = getattr(state, 'user_input', "").strip()
     current_stage = getattr(state, 'current_stage', 'initial_summary')
     
-    last_follow_up_question = getattr(state, 'follow_up_questions', "")
-    
     state_updates = {"user_input": "", "user_feedback": "", "routing_decision": None}
 
     if not user_input:
         return {**state_updates, "routing_decision": "PAUSE", "current_stage": current_stage}
-
-    stage_to_key = {
-        "initial_summary": "initial_summary",
-        "overview": "overview",
-        "features": "extracted_features",
-        "tech_stack": "tech_stack",
-        "scope_of_work": "scope_of_work"
-    }
-    current_content = getattr(state, stage_to_key.get(current_stage, ""), "")
 
     try:
         prompt = ChatPromptTemplate.from_template(router_prompt.template)
@@ -91,31 +80,28 @@ def router_node(state):
         
         output = chain.invoke({
             "user_input": user_input,
-            "current_stage": current_stage,
-            "current_content": str(current_content),
-            "last_follow_up_question": last_follow_up_question
+            "current_stage": current_stage
         })
 
         raw_output = output.content.strip()
         logger.info(f"Router raw output:\n{raw_output}")
 
-        action, feedback = "", ""
+        action = ""
         for line in raw_output.splitlines():
             if line.upper().startswith("ACTION:"):
                 action = line.split(":", 1)[1].strip().upper()
-            elif line.upper().startswith("FEEDBACK:"):
-                feedback = line.split(":", 1)[1].strip()
+                break 
 
         if action not in {"APPROVE", "EDIT"}:
             logger.warning(f"Router failed to produce valid action. Defaulting to EDIT. Output: {raw_output}")
-            action, feedback = "EDIT", user_input
-
-        logger.info(f"Router decision: {action}, Feedback: '{feedback}'")
+            action = "EDIT"
+        final_feedback = user_input if action == "EDIT" else ""
+        logger.info(f"Router decision: {action}, Feedback: '{final_feedback}'")
 
         return {
             **state_updates,
             "routing_decision": action,
-            "user_feedback": feedback if action == "EDIT" else "",
+            "user_feedback": final_feedback,
             "current_stage": current_stage
         }
 
@@ -355,6 +341,7 @@ def regenerate_current(state):
         "scope_of_work": generate_scope_of_work_node
     }
     handler = stage_map.get(current_stage)
+    logger.info(f"Regenerating stage '{current_stage}' with feedback.")
     return handler(state) if handler else state
 
 
