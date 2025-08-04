@@ -1,11 +1,9 @@
 
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import logging
-import os
 from dotenv import load_dotenv
 from src.graph import graph, END
 from utils.logger import setup_logging
@@ -15,8 +13,8 @@ from utils.helper import (
     update_session,
     get_stage_content,
     async_time_logger,
+    LLM
 )
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -32,13 +30,6 @@ app.add_middleware(
 )
 
 load_dotenv()
-
-LLM = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    api_key=os.getenv("API_KEY"),
-    temperature=0.4
-)
-
 
 class SimplifiedSessionResponse(BaseModel):
     content: str

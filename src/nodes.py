@@ -63,11 +63,14 @@ def generate_initial_summary_node(state):
             "current_stage": "initial_summary",
             "follow_up_questions": ""
         }
-
+    
 @time_logger
 def router_node(state):
     user_input = getattr(state, 'user_input', "").strip()
     current_stage = getattr(state, 'current_stage', 'initial_summary')
+    
+    last_follow_up_question = getattr(state, 'follow_up_questions', "")
+    
     state_updates = {"user_input": "", "user_feedback": "", "routing_decision": None}
 
     if not user_input:
@@ -85,21 +88,29 @@ def router_node(state):
     try:
         prompt = ChatPromptTemplate.from_template(router_prompt.template)
         chain = prompt | state.LLM
+        
         output = chain.invoke({
             "user_input": user_input,
             "current_stage": current_stage,
-            "current_content": current_content
+            "current_content": str(current_content),
+            "last_follow_up_question": last_follow_up_question
         })
 
+        raw_output = output.content.strip()
+        logger.info(f"Router raw output:\n{raw_output}")
+
         action, feedback = "", ""
-        for line in output.content.strip().splitlines():
-            if line.startswith("ACTION:"):
-                action = line.split("ACTION:")[1].strip().upper()
-            elif line.startswith("FEEDBACK:"):
-                feedback = line.split("FEEDBACK:")[1].strip()
+        for line in raw_output.splitlines():
+            if line.upper().startswith("ACTION:"):
+                action = line.split(":", 1)[1].strip().upper()
+            elif line.upper().startswith("FEEDBACK:"):
+                feedback = line.split(":", 1)[1].strip()
 
         if action not in {"APPROVE", "EDIT"}:
+            logger.warning(f"Router failed to produce valid action. Defaulting to EDIT. Output: {raw_output}")
             action, feedback = "EDIT", user_input
+
+        logger.info(f"Router decision: {action}, Feedback: '{feedback}'")
 
         return {
             **state_updates,

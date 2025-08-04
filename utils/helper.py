@@ -1,6 +1,4 @@
 from langchain_community.document_loaders.blob_loaders import Blob
-from langchain_community.document_loaders.parsers.pdf import PDFPlumberParser
-from langchain_core.documents import Document
 from typing import List, Dict, Any
 import os
 import tempfile
@@ -13,6 +11,7 @@ import uuid
 import time
 from functools import wraps
 import logging
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +21,11 @@ load_dotenv()
 sessions: Dict[str, Dict[str, Any]] = {}
 session_lock = Lock()
 
+LLM = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    api_key=os.getenv("API_KEY"),
+    temperature=0.4
+)
 
 def time_logger(func):
     """A decorator that logs the execution time of a synchronous function."""
