@@ -1,3 +1,4 @@
+
 from langchain_community.document_loaders.blob_loaders import Blob
 from typing import List, Dict, Any
 import os
@@ -103,7 +104,6 @@ def update_session(session_id: str, updates: Dict[str, Any]):
             sessions[session_id].update(updates)
 
 
-
 def get_stage_content(state_values: Dict[str, Any], current_stage: str) -> Dict[str, Any]:
     """Extract content and follow-up questions separately."""
     stage_content_map = {
@@ -111,13 +111,15 @@ def get_stage_content(state_values: Dict[str, Any], current_stage: str) -> Dict[
         "overview": "overview",
         "features": "extracted_features",
         "tech_stack": "tech_stack",
-        "scope_of_work": "scope_of_work"
+        "scope_of_work": "scope_of_work",
+        "final_review": "final_adjustment_response" 
     }
     
     content_key = stage_content_map.get(current_stage, "initial_summary")
     main_content = state_values.get(content_key, f"Error: No content generated for stage {current_stage}")
     follow_up = state_values.get("follow_up_questions", "")
     
+    logger.info(f"Retrieved content for '{current_stage}' from key '{content_key}'.")
     logger.info(f"Retrieved follow-up questions for {current_stage}: '{follow_up}'")
 
     return {

@@ -1,3 +1,5 @@
+
+
 import logging
 import json
 from langchain.prompts import ChatPromptTemplate
@@ -9,6 +11,7 @@ from utils.prompts import (
     tech_stack_prompt,
     work_scope_prompt,
     router_prompt,
+    final_adjustment_prompt,  
 )
 from utils.helper import time_logger
 import re
@@ -331,6 +334,72 @@ def generate_scope_of_work_node(state):
         }
 
 @time_logger
+def handle_final_adjustments_node(state):
+    """
+    Handles final, small adjustments to the scope of work without regenerating the whole document.
+    """
+    user_feedback = getattr(state, 'user_feedback', "")
+    scope_of_work = getattr(state, 'scope_of_work', "")
+
+    logger.info("Handling final adjustments based on user feedback.")
+
+    if not user_feedback:
+        return {
+            "final_adjustment_response": "No feedback provided for adjustment.",
+            "current_stage": "final_review",
+            "follow_up_questions": "Is there anything else you'd like to change?"
+        }
+
+    try:
+        prompt = ChatPromptTemplate.from_template(final_adjustment_prompt.template)
+        chain = prompt | state.LLM
+        
+        output = chain.invoke({
+            "scope_of_work": scope_of_work,
+            "user_feedback": user_feedback
+        })
+
+        raw = output.content.strip()
+        logger.info(f"Raw LLM output for final adjustment: {raw}")
+
+        if raw.startswith("```json") or raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+
+        try:
+            result = json.loads(raw)
+            logger.info(f"Parsed final adjustment result: {result}")
+            follow_up = result.pop("follow_up_question", "Does that look correct? Any other adjustments?")
+            
+            adjustment_response = json.dumps(result, indent=2)
+            
+            logger.info(f"Storing main content for final adjustment: {adjustment_response}")
+            logger.info(f"Storing new follow-up question: {follow_up}")
+
+            return {
+                "final_adjustment_response": adjustment_response,
+                "current_stage": "final_review",
+                "user_feedback": "",
+                "follow_up_questions": str(follow_up).strip() 
+            }
+
+        except json.JSONDecodeError:
+            logger.warning(f"Final adjustment output not JSON, treating as raw text:\n{raw}")
+            return {
+                "final_adjustment_response": raw,
+                "current_stage": "final_review",
+                "user_feedback": "",
+                "follow_up_questions": "Does that look correct? Any other adjustments?"
+            }
+
+    except Exception as e:
+        logger.error(f"Final adjustment generation error: {e}", exc_info=True)
+        return {
+            "final_adjustment_response": f"Error making adjustment: {str(e)}",
+            "current_stage": "final_review",
+            "follow_up_questions": "Sorry, I ran into an error. Could you rephrase your request?"
+        }
+    
+@time_logger
 def regenerate_current(state):
     current_stage = getattr(state, 'current_stage', 'initial_summary')
     stage_map = {
@@ -357,7 +426,15 @@ def should_continue_from_router(state):
     decision = getattr(state, 'routing_decision', None)
     stage = getattr(state, 'current_stage', 'initial_summary')
     
-    if decision == "APPROVE":
+    if decision == "EDIT":
+        if stage == "scope_of_work" or stage == "final_review":
+            return "handle_final_adjustments"
+        return "regenerate_current"
+        
+    elif decision == "APPROVE":
+        if stage == "final_review":
+            return END
+
         stage_transitions = {
             "initial_summary": "generate_overview",
             "overview": "feature_extraction",
@@ -366,7 +443,5 @@ def should_continue_from_router(state):
             "scope_of_work": END
         }
         return stage_transitions.get(stage, "pause_node")
-    elif decision == "EDIT":
-        return "regenerate_current"
     
     return "pause_node"

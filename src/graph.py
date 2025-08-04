@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, END
@@ -10,6 +11,7 @@ class State(BaseModel):
     extracted_features: str = ""
     tech_stack: str = ""
     scope_of_work: str = ""
+    final_adjustment_response: str = "" 
     current_stage: str = "initial_summary"
     user_input: str = ""
     user_feedback: str = ""
@@ -29,7 +31,7 @@ workflow.add_node("generate_scope_of_work", generate_scope_of_work_node)
 workflow.add_node("router", router_node)
 workflow.add_node("regenerate_current", regenerate_current)
 workflow.add_node("pause_node", pause_node)
-
+workflow.add_node("handle_final_adjustments", handle_final_adjustments_node) 
 workflow.set_entry_point("load_initial_state")
 
 workflow.add_conditional_edges(
@@ -47,6 +49,7 @@ workflow.add_edge("feature_extraction", "pause_node")
 workflow.add_edge("generate_tech_stack", "pause_node")
 workflow.add_edge("generate_scope_of_work", "pause_node")
 workflow.add_edge("regenerate_current", "pause_node")
+workflow.add_edge("handle_final_adjustments", "pause_node") 
 
 workflow.add_conditional_edges(
     "router",
@@ -57,6 +60,7 @@ workflow.add_conditional_edges(
         "generate_tech_stack": "generate_tech_stack",
         "generate_scope_of_work": "generate_scope_of_work",
         "regenerate_current": "regenerate_current",
+        "handle_final_adjustments": "handle_final_adjustments",
         "pause_node": "pause_node",
         END: END
     }

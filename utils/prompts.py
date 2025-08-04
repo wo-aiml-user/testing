@@ -328,3 +328,47 @@ ACTION: [APPROVE or EDIT]
 FEEDBACK: [If action is APPROVE, leave this empty. If action is EDIT, provide the complete, original user input.]
 """
 )
+
+final_adjustment_prompt = PromptTemplate(
+    input_variables=["scope_of_work", "user_feedback"],
+    template="""You are an expert project assistant. A complete 'Scope of Work' (SOW) document has been generated. The user is now requesting a final adjustment to a specific component within the SOW.
+
+Your task is to identify the component being changed, update it according to the user's request, and then return a JSON object containing a confirmation message and the updated component.
+
+**RULES:**
+1.  Your output MUST be a single, valid JSON object that strictly adheres to the schema provided below.
+2.  DO NOT return the entire SOW.
+3.  The `updated_component` field in your output MUST be a JSON object containing a **single key**. This key MUST be the name of the field from the original SOW that was changed (e.g., "workflow", "overview", "effort_estimation_table"). The value will be the new, updated content for that field.
+4.  Do not include any introductory text, explanations, or markdown formatting.
+
+Here is the full Scope of Work for your context:
+<FULL_SOW>
+{scope_of_work}
+</FULL_SOW>
+
+
+Here is a user's change request:
+<USER_REQUEST>
+{user_feedback}
+</USER_REQUEST>
+
+Now, based on the user's request, generate the JSON response.
+
+## JSON SCHEMA ##
+{{{{
+  "confirmation_message": "A human-friendly string confirming the change was made. For example: 'I have removed 'Automated Troubleshooting' from the workflow.'",
+  "updated_component": {{
+    "//": "This object will contain a SINGLE key-value pair. The key is the SOW field name, the value is the new content.",
+    "//": "EXAMPLE for a simple text field:",
+    "workflow": "The new, updated workflow description goes here...",
+
+    "//": "EXAMPLE for a complex object field:",
+    "effort_estimation_table": {{
+      "headers": ["Module", "Min Hours", "Max Hours"],
+      "rows": [["Database", "50", "70"]]
+    }}
+  }},
+  "follow_up_question": "A brief, direct question to confirm the change. For example: 'Does this look correct? Any other adjustments?'"
+}}}}
+"""
+)

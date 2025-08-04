@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// --- HELPER FUNCTIONS AND COMPONENTS (No Changes) ---
+// --- HELPER FUNCTIONS AND COMPONENTS ---
 const processApiResponseData = (response: ApiResponse): string => {
     let data: any;
     try {
@@ -63,16 +63,65 @@ const TechStack = ({ data }: { data: Record<string, any> }) => {
 
 const FormattedSection = ({ title, content }: { title: string, content: string }) => (<div><h2 className="text-lg font-bold text-foreground mb-2 border-b border-border pb-1">{title}</h2><div className="whitespace-pre-wrap leading-relaxed"><ParsedContent text={content} /></div></div>);
 
+const EffortTable = ({ data }: { data: { headers: string[], rows: string[][] } }) => (
+    <table className="w-full text-sm my-2">
+        <thead>
+            <tr className="border-b border-border">
+                {data.headers.map(header => <th key={header} className="p-2 text-left font-semibold">{header}</th>)}
+            </tr>
+        </thead>
+        <tbody>
+            {data.rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="border-b border-border/50">
+                    {row.map((cell, cellIndex) => <td key={cellIndex} className="p-2">{cell}</td>)}
+                </tr>
+            ))}
+        </tbody>
+    </table>
+);
+
+// MODIFIED: This component is now more robust to handle the generic key-value pair structure.
+const FinalAdjustment = ({ data }: { data: { confirmation_message: string; updated_component: any; follow_up_question?: string } }) => {
+    const formatTitle = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Extract the key and value from the updated_component object
+    const componentKey = Object.keys(data.updated_component)[0];
+    const componentValue = data.updated_component[componentKey];
+    
+    let componentToRender;
+
+    if (componentValue && typeof componentValue === 'object' && componentValue !== null && 'headers' in componentValue && 'rows' in componentValue) {
+        // It's the effort estimation table
+        componentToRender = <FormattedSection title={formatTitle(componentKey)} content=""><EffortTable data={componentValue} /></FormattedSection>;
+    } else if (typeof componentValue === 'string') {
+        // It's a simple text component (like workflow, overview, etc.)
+        componentToRender = <FormattedSection title={formatTitle(componentKey)} content={componentValue} />;
+    } else {
+        // Fallback for any other type of component
+        componentToRender = <div><h2 className="text-lg font-bold text-foreground mb-2">{formatTitle(componentKey)}</h2><pre className="text-xs whitespace-pre-wrap">{JSON.stringify(componentValue, null, 2)}</pre></div>;
+    }
+
+    return (
+        <div>
+            <p className="whitespace-pre-wrap leading-relaxed mb-4"><ParsedContent text={data.confirmation_message} /></p>
+            {componentToRender}
+            {data.follow_up_question && <FollowUpQuestion question={data.follow_up_question} />}
+        </div>
+    );
+};
+
 const ScopeOfWork = ({ data }: { data: any }) => {
     const formatTitle = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     const sectionOrder = ['overview', 'user_roles_and_key_features', 'feature_breakdown', 'workflow', 'milestone_plan', 'tech_stack', 'effort_estimation_table', 'deliverables', 'out_of_scope', 'client_responsibilities', 'technical_requirements', 'general_notes'];
     const dataMap = new Map(Object.entries(data));
-    return (<div className="space-y-6 text-left">{sectionOrder.map(key => { if (!dataMap.has(key) || key === 'follow_up_question') return null; const value = dataMap.get(key); const title = formatTitle(key); if (key === 'tech_stack' && typeof value === 'object' && value !== null) { const techStackData = { ...value }; delete techStackData.follow_up_question; return (<div key={key}><h2 className="text-lg font-bold text-foreground mb-2 border-b border-border pb-1">{title}</h2><div className="py-2"><TechStack data={techStackData} /></div></div>); } if (key === 'effort_estimation_table' && typeof value === 'object' && value !== null && 'headers' in value && 'rows' in value) { return (<div key={key}><h2 className="text-lg font-bold text-foreground mb-2 border-b border-border pb-1">{title}</h2><table className="w-full text-sm my-2"><thead><tr className="border-b border-border">{(value.headers as string[]).map(header => <th key={header} className="p-2 text-left font-semibold">{header}</th>)}</tr></thead><tbody>{(value.rows as string[][]).map((row, rowIndex) => (<tr key={rowIndex} className="border-b border-border/50">{row.map((cell, cellIndex) => <td key={cellIndex} className="p-2">{cell}</td>)}</tr>))}</tbody></table></div>); } if (typeof value === 'string' && value.trim() !== '') { return <FormattedSection key={key} title={title} content={value} />; } return null; })} {data.follow_up_question && <FollowUpQuestion question={data.follow_up_question} />}</div>);
+    return (<div className="space-y-6 text-left">{sectionOrder.map(key => { if (!dataMap.has(key) || key === 'follow_up_question') return null; const value = dataMap.get(key); const title = formatTitle(key); if (key === 'tech_stack' && typeof value === 'object' && value !== null) { const techStackData = { ...value }; delete techStackData.follow_up_question; return (<div key={key}><h2 className="text-lg font-bold text-foreground mb-2 border-b border-border pb-1">{title}</h2><div className="py-2"><TechStack data={techStackData} /></div></div>); } if (key === 'effort_estimation_table' && typeof value === 'object' && value !== null && 'headers' in value && 'rows' in value) { return (<div key={key}><h2 className="text-lg font-bold text-foreground mb-2 border-b border-border pb-1">{title}</h2><EffortTable data={value} /></div>); } if (typeof value === 'string' && value.trim() !== '') { return <FormattedSection key={key} title={title} content={value} />; } return null; })} {data.follow_up_question && <FollowUpQuestion question={data.follow_up_question} />}</div>);
 };
+
 
 const MessageContent = ({ content }: { content: string }) => {
     try {
         const data = JSON.parse(content);
+        if (data.confirmation_message && data.updated_component) return <FinalAdjustment data={data} />;
         if (data.overview && data.effort_estimation_table) return <ScopeOfWork data={data} />;
         if (data.frontend && data.backend) return <TechStack data={data} />;
         if (data.features) return <FeatureList data={data} />;
@@ -83,7 +132,8 @@ const MessageContent = ({ content }: { content: string }) => {
     }
 };
 
-// --- MAIN CHAT COMPONENT ---
+
+// --- MAIN CHAT COMPONENT (No other changes needed below) ---
 interface Message { id: string; content: string; sender: 'user' | 'assistant'; timestamp: Date; }
 export interface Session { id: string; name: string; type: 'folder' | 'chat'; fileName?: string; messages: Message[]; }
 
@@ -229,7 +279,6 @@ const Chat = () => {
         }
     };
     
-    // MODIFIED: This is the robust, universally compatible copy function.
     const handleCopyMessage = (messageId: string) => {
         const element = document.getElementById(`message-content-${messageId}`);
         if (!element) {
@@ -240,7 +289,6 @@ const Chat = () => {
         const textarea = document.createElement('textarea');
         textarea.value = element.innerText;
         
-        // Make the textarea invisible
         textarea.style.position = 'fixed';
         textarea.style.top = '-9999px';
         textarea.style.left = '-9999px';
