@@ -89,10 +89,6 @@ testing/
 └─ .gitignore
 ```
 
-## Conventions
-- Use clear and descriptive test names.
-- Keep tests isolated and deterministic.
-- Document any special setup or environment variables below.
 
 ## Environment Variables
 Create a `.env` file at the project root with the following keys:
@@ -104,4 +100,3 @@ GOOGLE_API_KEY=your_google_gemini_api_key
 # LlamaParse for PDF parsing
 PARSE_KEY=your_llama_parse_api_key
 ```
-
